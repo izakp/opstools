@@ -15,9 +15,8 @@ def parse_args():
     formatter_class=argparse.ArgumentDefaultsHelpFormatter
   )
   parser.add_argument(
-    'artsy_env',
-    choices=['staging', 'production'],
-    help='the artsy environment of the Kubernetes cluster'
+    'context',
+    help='the context of the target Kubernetes cluster'
   )
   parser.add_argument(
     '--in_cluster',
@@ -35,6 +34,26 @@ def parse_args():
     action='store_true',
     help='indicates to save backup to S3'
   )
+  parser.add_argument(
+    '--include-resources',
+    nargs='+',
+    help='include additional resource types in backup - takes preference over excluded resources'
+  )
+  parser.add_argument(
+    '--exclude-resources',
+    nargs='+',
+    help='exclude given resource types from backup, or "ALL" to exclude all'
+  )
+  parser.add_argument(
+    '--include-namespaces',
+    nargs='+',
+    help='include only the given namespaces in backup - takes preference over excluded namespaces'
+  )
+  parser.add_argument(
+    '--exclude-namespaces',
+    nargs='+',
+    help='exclude given namespaces from backup, or "ALL" to exclude all'
+  )
   return parser.parse_args()
 
 def parse_env():
@@ -50,17 +69,21 @@ def validate(s3, s3_bucket):
   if s3 and not s3_bucket:
     raise Exception("K8S_BACKUP_S3_BUCKET must be specified in the environment.")
   if s3 and not is_artsy_s3_bucket(s3_bucket):
-    raise Exception(f"{s3_bucket} seems not an Artsy S3 bucket.")
+    raise Exception(f"{s3_bucket} seems not an S3 bucket.")
 
 
 if __name__ == "__main__":
 
   args = parse_args()
-  artsy_env, in_cluster, loglevel, s3 = (
-    args.artsy_env,
+  context, in_cluster, loglevel, s3, include_r, exclude_r, include_n, exclude_n = (
+    args.context,
     args.in_cluster,
     args.loglevel,
-    args.s3
+    args.s3,
+    args.include_resources,
+    args.exclude_resources,
+    args.include_namespaces,
+    args.exclude_namespaces
   )
 
   setup_logging(eval('logging.' + loglevel))
@@ -74,7 +97,6 @@ if __name__ == "__main__":
     'cronjobs',
     'daemonsets',
     'deployments',
-    'externalsecrets',
     'horizontalpodautoscalers',
     'ingresses',
     'persistentvolumeclaims',
@@ -87,4 +109,20 @@ if __name__ == "__main__":
     'services',
     'statefulsets'
   ]
-  export_and_backup(KUBERNETES_OBJECTS, artsy_env, in_cluster, local_dir, s3, s3_bucket, s3_prefix)
+
+  if exclude_r is not None:
+    if len(exclude_r) == 1 and exclude_r[0] == 'ALL':
+      KUBERNETES_OBJECTS = []
+    else:
+      for resource in exclude_r:
+        if resource in KUBERNETES_OBJECTS:
+          KUBERNETES_OBJECTS.remove(resource)
+
+  if include_r is not None:
+    for resource in include_r:
+      if resource not in KUBERNETES_OBJECTS:
+        KUBERNETES_OBJECTS.append(resource)
+
+  KUBERNETES_OBJECTS.sort()
+
+  export_and_backup(KUBERNETES_OBJECTS, context, in_cluster, local_dir, s3, s3_bucket, s3_prefix, include_n, exclude_n)
