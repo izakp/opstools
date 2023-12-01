@@ -13,17 +13,19 @@ from lib.kctl import Kctl
 
 def backup_to_s3(context, export_dir, local_dir, s3_bucket, s3_prefix):
   ''' back up yamls to S3 '''
+  sanitized_context = context.replace('/', '_')
   archive_file = os.path.join(
-    local_dir, f"kubernetes-backup-{context}.tar.gz"
+    local_dir, f"kubernetes-backup-{sanitized_context}.tar.gz"
   )
   logging.info(f"Writing local archive file: {archive_file} ...")
+
   with tarfile.open(archive_file, "w:gz") as tar:
     tar.add(export_dir, arcname=os.path.basename(export_dir))
   artsy_s3_backup = ArtsyS3Backup(
     s3_bucket,
     s3_prefix,
     'k8s',
-    context,
+    sanitized_context,
     'tar.gz'
   )
   try:
