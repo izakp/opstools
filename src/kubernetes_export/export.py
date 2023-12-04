@@ -82,6 +82,13 @@ def parse_env():
   local_dir = os.environ.get('LOCAL_DIR', '/tmp/kubernetes_resources')
   return local_dir, s3_bucket, s3_prefix
 
+def parse_commas(*args):
+  vars_to_fix = list(args)
+  for i, var in enumerate(vars_to_fix):
+    if var is not None and len(var) == 1 and ',' in var[0]:
+      vars_to_fix[i] = var[0].split(',')
+  return vars_to_fix
+
 if __name__ == "__main__":
 
   args = parse_args()
@@ -95,6 +102,7 @@ if __name__ == "__main__":
     args.include_namespaces,
     args.exclude_namespaces
   )
+  include_r, exclude_r, include_n, exclude_n = parse_commas(include_r, exclude_r, include_n, exclude_n)
 
   setup_logging(eval('logging.' + loglevel))
 
