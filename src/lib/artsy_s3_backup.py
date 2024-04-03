@@ -13,11 +13,9 @@ class ArtsyS3Backup:
     self,
     s3_bucket,
     s3_prefix,
-    artsy_app,
-    artsy_env,
     filename_suffix
   ):
-    self._full_prefix = os.path.join(s3_prefix, artsy_app, artsy_env)
+    self._full_prefix = s3_prefix
     self._s3_interface = S3Interface()
     self.filename_suffix = filename_suffix
     self.s3_bucket = s3_bucket
@@ -92,11 +90,12 @@ class ArtsyS3Backup:
     ''' return backups older than ndays '''
     backups = self.backups()
     old = []
-    for id in backups:
+    for backup in backups:
+      id = backup.split('/')[-1]
       created_at = self.created_at(id)
       logging.debug(
         f"ArtsyS3Backup: backup with id {id} was created at {created_at}"
       )
       if over_ndays_ago(created_at, ndays):
-        old += [id]
+        old += [backup]
     return old

@@ -9,10 +9,8 @@ from lib.logging import setup_logging
 class AppConfig:
   def __init__(self, cmdline_args, env):
     ''' set app-wide configs and initialize the app '''
-    loglevel, self.app, self.artsy_env, self.force, self.ndays, self.suffix = (
+    loglevel, self.force, self.ndays, self.suffix = (
       cmdline_args.loglevel,
-      cmdline_args.app,
-      cmdline_args.artsy_env,
       cmdline_args.force,
       int(cmdline_args.ndays),
       cmdline_args.suffix
@@ -30,15 +28,6 @@ def parse_args():
   ''' parse command line args '''
   parser = argparse.ArgumentParser(
     formatter_class=argparse.ArgumentDefaultsHelpFormatter
-  )
-  parser.add_argument(
-    'app',
-    help="which app's backups to prune, example: k8s, rabbitmq, ..."
-  )
-  parser.add_argument(
-    'artsy_env',
-    choices=['staging', 'production'],
-    help='the artsy environment to prune backups in'
   )
   parser.add_argument(
     'ndays',
