@@ -24,8 +24,6 @@ def backup_to_s3(context, export_dir, local_dir, s3_bucket, s3_prefix):
   artsy_s3_backup = ArtsyS3Backup(
     s3_bucket,
     s3_prefix,
-    'k8s',
-    sanitized_context,
     'tar.gz'
   )
   try:
