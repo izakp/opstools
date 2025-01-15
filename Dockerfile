@@ -30,7 +30,7 @@ WORKDIR /src
 
 COPY pyproject.toml poetry.lock /src/
 RUN poetry config virtualenvs.create false \
-  && poetry install --without dev
+  && poetry install --without dev --no-root
 
 USER deploy
 ENV USER deploy
